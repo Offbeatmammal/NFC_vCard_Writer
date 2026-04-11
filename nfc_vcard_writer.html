@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NFC vCard Writer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 16px; }
+    label { display: block; margin-top: 10px; font-weight: 600; }
+    input { width: 100%; padding: 6px; margin-top: 4px; box-sizing: border-box; }
+
+    .input-prefix {
+      position: relative;
+      display: block;
+    }
+
+    .input-prefix::before {
+      content: "https://";      /* prefix text */
+      position: absolute;
+      left: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #666;
+      pointer-events: none; /* so clicks go to the input */
+    }
+
+    .input-prefix input {
+      padding-left: 60px;  /* make room for the prefix */
+    }
+
+    button { margin-top: 20px; padding: 10px 16px; font-size: 1rem; }
+    #status { margin-top: 16px; white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h1>NFC vCard Writer v0.7.1</h1>
+
+  <h3>Full Name</h3>
+
+  <label>First Name</label>
+  <input id="firstname" value="" />
+
+  <label>Last Name</label>
+  <input id="lastname" value="" />
+
+  <label>Organisation</label>
+  <input id="org" value="" />
+
+  <h3>Work Address</h3>
+  
+  <label>Street</label>
+  <input id="work_addrExtended" value="" />
+  
+  <label>Street</label>
+  <input id="work_addrStreet" value="" />
+
+  <label>City</label>
+  <input id="work_addrCity" value="" /> 
+
+  <label>State / Region</label>
+  <input id="work_addrState" value="" />
+
+  <label>Postal Code</label>
+  <input id="work_addrPostal" value="" />
+
+  <label>Country</label>
+  <input id="work_addrCountry" value="" />
+
+  <label>Mobile Phone</label>
+  <input id="mobile" value="" />
+
+  <label>Work Phone</label>
+  <input id="work_phone" value="" />
+
+  <label>Work Email</label>
+  <input id="work_email" value="" />
+
+  <label>Personal Email</label>
+  <input id="personal_email" value="" />
+
+  <label>Website</label>
+  <div class="input-prefix">
+    <input id="website" value="" />
+  </div>
+
+  <button id="writeBtn" disabled>Write vCard to NFC Tag</button>
+
+  <div id="status"></div>
+
+  <script>
+    const statusEl = document.getElementById("status");
+
+    function setStatus(msg, isError = false) {
+      statusEl.textContent = msg;
+      statusEl.style.color = isError ? "red" : "black";
+    }
+
+    // -------------------------------
+    // Build vCard 3.0
+    // -------------------------------
+    function buildVCard() {
+      const firstname = document.getElementById("firstname").value.trim();
+      const lastname = document.getElementById("lastname").value.trim();
+      const org = document.getElementById("org").value.trim();
+
+      const extended = document.getElementById("work_addrExtended").value.trim();
+      const street = document.getElementById("work_addrStreet").value.trim();
+      const city = document.getElementById("work_addrCity").value.trim();
+      const state = document.getElementById("work_addrState").value.trim();
+      const postal = document.getElementById("work_addrPostal").value.trim();
+      const country = document.getElementById("work_addrCountry").value.trim();
+
+      const mobile = document.getElementById("mobile").value.trim();
+      const work_phone = document.getElementById("work_phone").value.trim();
+      const work_email = document.getElementById("work_email").value.trim();
+      const personal_email = document.getElementById("personal_email").value.trim();
+      const website = document.getElementById("website").value.trim();
+
+      const lines = [];
+
+      lines.push("BEGIN:VCARD");
+      lines.push("VERSION:3.0");
+
+      if (firstname || lastname) {
+        lines.push(`FN:${firstname} ${lastname}`);
+        lines.push(`N:${lastname};${firstname};;;`);
+      }
+
+      if (org) lines.push(`ORG:${org}`);
+
+      // ADR format: ADR;TYPE=WORK:pobox;extended;street;city;region;postalCode;country
+      if (extended || street || city || state || postal || country) {
+        lines.push(
+          `ADR;TYPE=WORK:;${extended};${street};${city};${state};${postal};${country}`
+        );
+      }
+
+      if (mobile) lines.push(`TEL;TYPE=CELL:${mobile}`);
+      if (work_phone) lines.push(`TEL;TYPE=Work:${work_phone}`);
+      
+      if (personal_email) lines.push(`EMAIL;TYPE=Home:${personal_email}`);
+      if (work_email) lines.push(`EMAIL;TYPE=Work:${work_email}`);
+
+      if (website) lines.push(`URL:https://${website}`);
+
+      lines.push("END:VCARD");
+
+      return lines.join("\r\n");
+    }
+
+    // -------------------------------
+    // NFC Permission Handling
+    // -------------------------------
+    async function ensureNfcPermission() {
+      if (!("permissions" in navigator)) {
+        return true; // Older browsers: just try writing
+      }
+
+      try {
+        const status = await navigator.permissions.query({ name: "nfc" });
+
+        if (status.state === "granted") {
+          return true;
+        }
+
+        if (status.state === "denied") {
+          setStatus("NFC permission denied in browser settings.", true);
+          return false;
+        }
+
+        // state === "prompt"
+        try {
+          const reader = new NDEFReader();
+          await reader.scan(); // triggers permission dialog
+          reader.onreading = () => {};
+          return true;
+        } catch (err) {
+          setStatus("NFC permission request was cancelled or blocked.", true);
+          return false;
+        }
+      } catch (err) {
+        return true; // Permissions API not supported
+      }
+    }
+  
+    function textToUint8Array(text) {
+      return new TextEncoder().encode(text);
+    }
+
+    // -------------------------------
+    // Write vCard to NFC Tag
+    // -------------------------------
+    async function writeVCardToNfc() {
+      if (!("NDEFReader" in window)) {  // should actually test for Writer, but that's not exposed yet in Chrome147/Android
+        setStatus("Web NFC is not supported on this device.", true);
+        return;
+      }
+
+      // Request permission if needed
+      const ok = await ensureNfcPermission();
+      if (!ok) return;
+
+      const vcard = buildVCard();
+      const vcardBytes = textToUint8Array(vcard);
+      setStatus("Tap and hold an NFC tag near your phone…");
+
+      try {
+        const reader = new NDEFReader();
+        await reader.write({
+          records: [
+            {
+              recordType: "mime",
+              mediaType: "text/vcard",
+              data: vcardBytes
+            }
+          ]
+        });
+
+        setStatus("vCard written successfully!\n\n" + vcard);
+      } catch (err) {
+        setStatus("Error writing NFC tag: " + err.message, true);
+      }
+    }
+
+    function checkLength() {
+      // track size of the vCard which will be written, NTAG215 allows up to 490 bytes
+      const max_size = 490
+      const vcard = buildVCard();
+      const l = vcard.length + 16 // 16 bytes overhead for the MIME type etc
+      setStatus(`Bytes: ${l}`,l > max_size)
+
+      document.getElementById("writeBtn").disabled = (l > max_size)
+    }
+
+    document.getElementById("writeBtn").addEventListener("click", writeVCardToNfc);
+
+    document.addEventListener("input", () => {
+      checkLength()
+    });
+    checkLength();
+  </script>
+</body>
+</html>
