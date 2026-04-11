@@ -1,6 +1,6 @@
 # NFC vCard Writer
 
-This is a fairly simple project (HTML, Javascript) to allow a user with Chrome running on a supported Android device to write a vCard to an NFC tag (see [NDEFWriter]([url](https://caniuse.com/?search=NDEFWriter)) for latest device/browser version support).
+This is a fairly simple project (HTML, Javascript) to allow a user with Chrome running on a supported Android device to write a vCard to an NFC tag (see [NDEFWriter](https://caniuse.com/?search=NDEFWriter) for latest device/browser version support).
 
 It was annoying how bad some of the available apps were that offered to do this - either full of ads, partial/broken/no vCard implementation, or expensive - so I ended up spending a bit of time researching this (I needed to be able to read/write NFC enabled ID cards for a non-profit to track volunteers, so was already heading down the rabbit-hole!).
 
