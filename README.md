@@ -10,7 +10,7 @@ It checks input to make sure the vCard will fit onto an NTAG215 format card (if 
 
 Apart from the length check, there is no validation (might be nice to validate emails are correct format or the URL can be accessed), either keeping it within the HTML/JavaScript or doing some server side validation.
 
-Currently I'm not hosting a live version of this, but plan to soon.
+If you want to try it out, there's a live version hosted [here](https://obm.one/nfc_write).
 
 **Requests:** 
 ---
