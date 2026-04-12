@@ -5,192 +5,499 @@
   <title>NFC vCard Writer</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <style>
-    body { font-family: system-ui, sans-serif; padding: 16px; }
-    label { display: block; margin-top: 10px; font-weight: 600; }
-    input { width: 100%; padding: 6px; margin-top: 4px; box-sizing: border-box; }
-
-    .input-prefix {
-      position: relative;
-      display: block;
-    }
-
-    .input-prefix::before {
-      content: "https://";      /* prefix text */
-      position: absolute;
-      left: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #666;
-      pointer-events: none; /* so clicks go to the input */
-    }
-
-    .input-prefix input {
-      padding-left: 60px;  /* make room for the prefix */
-    }
-
-    button { margin-top: 20px; padding: 10px 16px; font-size: 1rem; }
-    #status { margin-top: 16px; white-space: pre-wrap; }
+    body { font-family: system-ui, sans-serif; padding: 16px; max-width: 600px; margin: 0 auto; }
+    
+    .field-group { margin-bottom: 24px; }
+    .field-group h3 { margin-bottom: 12px; color: #333; border-bottom: 1px solid #ddd; padding-bottom: 4px; }
+    
+    .field { margin-bottom: 12px; }
+    .field label { display: block; margin-bottom: 4px; font-weight: 600; color: #555; }
+    .field input { width: 100%; padding: 8px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
+    .field input:focus { outline: none; border-color: #007acc; box-shadow: 0 0 0 2px rgba(0, 122, 204, 0.2); }
+    
+    .field.invalid input { border-color: #dc3545; }
+    .field .error-msg { color: #dc3545; font-size: 12px; margin-top: 4px; }
+    
+    button { margin-top: 20px; padding: 12px 24px; font-size: 1rem; background: #007acc; color: white; border: none; border-radius: 4px; cursor: pointer; }
+    button:hover:not(:disabled) { background: #005a9e; }
+    button:disabled { background: #ccc; cursor: not-allowed; }
+    
+    #status { margin-top: 16px; padding: 12px; border-radius: 4px; white-space: pre-wrap; }
+    #status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    #status.warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+    #status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    #status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    
+    .size-indicator { margin-top: 12px; font-size: 14px; }
+    .size-bar { width: 100%; height: 20px; background: #f0f0f0; border-radius: 10px; overflow: hidden; margin-top: 4px; }
+    .size-fill { height: 100%; transition: width 0.3s ease, background-color 0.3s ease; }
+    
+    .intro { background: #f8f9fa; padding: 16px; border-radius: 4px; margin-bottom: 24px; }
+    .form-actions { margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; }
+    .btn-secondary { background: #6c757d; color: white; border: none; border-radius: 4px; padding: 8px 16px; cursor: pointer; }
+    .btn-secondary:hover { background: #5a6268; }
+    @media (max-width: 480px) { .form-actions { flex-direction: column; } }
   </style>
 </head>
 <body>
   <h1>NFC vCard Writer</h1>
 
-  <div>Enter details below, and then press the [Write] button. Note than NTAG215 only has 490 bytes available so the content, including vCard structure, needs to fit into that.</div>
+  <div class="intro">Enter your contact details below and press [Write] to save to an NFC tag. NTAG215 tags have 490 bytes available - the size indicator shows current usage.</div>
 
-  <h3>Full Name</h3>
-
-  <label>First Name</label>
-  <input id="firstname" value="" />
-
-  <label>Last Name</label>
-  <input id="lastname" value="" />
-
-  <label>Organisation</label>
-  <input id="org" value="" />
-
-  <h3>Work Address</h3>
-  
-  <label>Number/Apartment</label>
-  <input id="work_addrExtended" value="" />
-  
-  <label>Street</label>
-  <input id="work_addrStreet" value="" />
-
-  <label>City</label>
-  <input id="work_addrCity" value="" /> 
-
-  <label>State / Region</label>
-  <input id="work_addrState" value="" />
-
-  <label>Postal Code</label>
-  <input id="work_addrPostal" value="" />
-
-  <label>Country</label>
-  <input id="work_addrCountry" value="" />
-
-  <h3>Home Address</h3>
-  
-  <label>Number/Apartment</label>
-  <input id="home_addrExtended" value="" />
-  
-  <label>Street</label>
-  <input id="home_addrStreet" value="" />
-
-  <label>City</label>
-  <input id="home_addrCity" value="" /> 
-
-  <label>State / Region</label>
-  <input id="home_addrState" value="" />
-
-  <label>Postal Code</label>
-  <input id="home_addrPostal" value="" />
-
-  <label>Country</label>
-  <input id="home_addrCountry" value="" />
-
-  <h3>Communications</h3>
-
-  <label>Mobile Phone</label>
-  <input id="mobile" value="" />
-
-  <label>Work Phone</label>
-  <input id="work_phone" value="" />
-
-  <label>Work Email</label>
-  <input id="work_email" value="" />
-
-  <label>Personal Email</label>
-  <input id="personal_email" value="" />
-
-  <label>Website</label>
-  <div class="input-prefix">
-    <input id="website" value="" />
+  <div id="form-container">
+    <!-- Form will be dynamically generated here -->
   </div>
 
-  <button id="writeBtn" disabled>Write vCard to NFC Tag</button>
+  <div class="size-indicator">
+    <div>Size: <span id="size-text">0</span> / <span id="maxsize-text"></span> bytes</div>
+    <div class="size-bar">
+      <div id="size-fill" class="size-fill"></div>
+    </div>
+  </div>
+
+  <div class="form-actions">
+    <button id="writeBtn" disabled>Write vCard to NFC Tag</button>
+    <button type="button" id="clearBtn" class="btn-secondary">Clear Form</button>
+    <button type="button" id="previewBtn" class="btn-secondary">Preview vCard</button>
+  </div>
 
   <div id="status"></div>
 
   <script>
-    const statusEl = document.getElementById("status");
+    // Configuration constants
+    const CONFIG = {
+      MAX_SIZE: 490,
+      NDEF_OVERHEAD: 16,
+      UPDATE_DEBOUNCE_MS: 250,
+      MAX_FIELD_LENGTH: 255,
+      STORAGE_KEY: 'nfc-vcard-data'
+    };
 
-    function setStatus(msg, isError = false) {
-      statusEl.textContent = msg;
-      statusEl.style.color = isError ? "red" : "black";
+    // Cache DOM elements for better performance
+    const elements = {
+      status: document.getElementById("status"),
+      sizeText: document.getElementById("size-text"),
+      sizeFill: document.getElementById("size-fill"),
+      maxSizeText: document.getElementById("maxsize-text"),
+      writeBtn: document.getElementById("writeBtn"),
+      clearBtn: document.getElementById("clearBtn"),
+      previewBtn: document.getElementById("previewBtn"),
+      formContainer: document.getElementById("form-container")
+    };
+
+    let updateVCardTimeout = null;
+
+    // Field configuration
+    const FIELD_CONFIG = {
+      personal: {
+        title: "Personal Information", 
+        fields: [
+          { id: "firstName", label: "First Name", type: "text", vcard: data => data.firstName && `FN:${escapeVCardText(data.firstName)} ${escapeVCardText(data.lastName || '')}`.trim() },
+          { id: "lastName", label: "Last Name", type: "text", vcard: data => data.lastName && `N:${escapeVCardText(data.lastName)};${escapeVCardText(data.firstName || '')};;;` },
+          { id: "organization", label: "Organization", type: "text", vcard: data => data.organization && `ORG:${escapeVCardText(data.organization)}` }
+        ]
+      },
+      workAddress: {
+        title: "Work Address",
+        fields: [
+          { id: "workExtended", label: "Number/Apartment", type: "text" },
+          { id: "workStreet", label: "Street", type: "text" },
+          { id: "workCity", label: "City", type: "text" },
+          { id: "workState", label: "State/Region", type: "text" },
+          { id: "workPostal", label: "Postal Code", type: "text" },
+          { id: "workCountry", label: "Country", type: "text" }
+        ],
+        vcard: data => {
+          const fields = ['', escapeVCardText(data.workExtended || ''), escapeVCardText(data.workStreet || ''), escapeVCardText(data.workCity || ''), escapeVCardText(data.workState || ''), escapeVCardText(data.workPostal || ''), escapeVCardText(data.workCountry || '')];
+          return fields.some((f, i) => i > 0 && f) ? `ADR;TYPE=WORK:${fields.join(';')}` : null;
+        }
+      },
+      homeAddress: {
+        title: "Home Address", 
+        fields: [
+          { id: "homeExtended", label: "Number/Apartment", type: "text" },
+          { id: "homeStreet", label: "Street", type: "text" },
+          { id: "homeCity", label: "City", type: "text" },
+          { id: "homeState", label: "State/Region", type: "text" },
+          { id: "homePostal", label: "Postal Code", type: "text" },
+          { id: "homeCountry", label: "Country", type: "text" }
+        ],
+        vcard: data => {
+          const fields = ['', escapeVCardText(data.homeExtended || ''), escapeVCardText(data.homeStreet || ''), escapeVCardText(data.homeCity || ''), escapeVCardText(data.homeState || ''), escapeVCardText(data.homePostal || ''), escapeVCardText(data.homeCountry || '')];
+          return fields.some((f, i) => i > 0 && f) ? `ADR;TYPE=HOME:${fields.join(';')}` : null;
+        }
+      },
+      communications: {
+        title: "Contact Information",
+        fields: [
+          { id: "mobile", label: "Mobile Phone", type: "tel", vcard: data => data.mobile && `TEL;TYPE=CELL:${escapeVCardText(data.mobile)}` },
+          { id: "workPhone", label: "Work Phone", type: "tel", vcard: data => data.workPhone && `TEL;TYPE=Work:${escapeVCardText(data.workPhone)}` },
+          { id: "workEmail", label: "Work Email", type: "email", vcard: data => data.workEmail && `EMAIL;TYPE=Work:${escapeVCardText(data.workEmail)}` },
+          { id: "personalEmail", label: "Personal Email", type: "email", vcard: data => data.personalEmail && `EMAIL;TYPE=Home:${escapeVCardText(data.personalEmail)}` },
+          { id: "website", label: "Website", type: "url", vcard: data => data.website && `URL:${escapeVCardText(addProtocolIfMissing(data.website))}` }
+        ]
+      }
+    };
+
+    /**
+     * Status management with persistent messages
+     * @param {string} msg - Status message
+     * @param {string} type - Status type: info, error, warning, success
+     */
+    function setStatus(msg, type = "info") {
+      try {
+        if (elements.status) {
+          elements.status.textContent = msg;
+          elements.status.className = type;
+        }
+      } catch (error) {
+        console.error("Error setting status:", error);
+      }
     }
 
-    // -------------------------------
-    // Build vCard 3.0
-    // -------------------------------
-    function buildVCard() {
-      const firstname = document.getElementById("firstname").value.trim();
-      const lastname = document.getElementById("lastname").value.trim();
-      const org = document.getElementById("org").value.trim();
-
-      const work_extended = document.getElementById("work_addrExtended").value.trim();
-      const work_street = document.getElementById("work_addrStreet").value.trim();
-      const work_city = document.getElementById("work_addrCity").value.trim();
-      const work_state = document.getElementById("work_addrState").value.trim();
-      const work_postal = document.getElementById("work_addrPostal").value.trim();
-      const work_country = document.getElementById("work_addrCountry").value.trim();
-
-      const home_extended = document.getElementById("home_addrExtended").value.trim();
-      const home_street = document.getElementById("home_addrStreet").value.trim();
-      const home_city = document.getElementById("home_addrCity").value.trim();
-      const home_state = document.getElementById("home_addrState").value.trim();
-      const home_postal = document.getElementById("home_addrPostal").value.trim();
-      const home_country = document.getElementById("home_addrCountry").value.trim();
-
-      const mobile = document.getElementById("mobile").value.trim();
-      const work_phone = document.getElementById("work_phone").value.trim();
-      const work_email = document.getElementById("work_email").value.trim();
-      const personal_email = document.getElementById("personal_email").value.trim();
-      const website = document.getElementById("website").value.trim();
-
-      const lines = [];
-
-      lines.push("BEGIN:VCARD");
-      lines.push("VERSION:3.0");
-
-      if (firstname || lastname) {
-        lines.push(`FN:${firstname} ${lastname}`);
-        lines.push(`N:${lastname};${firstname};;;`);
+    /**
+     * Status management with error handling
+     * @param {string} msg - Status message
+     * @param {string} type - Status type: info, error, warning, success
+     */
+    function setStatus(msg, type = "info") {
+      try {
+        if (elements.status) {
+          elements.status.textContent = msg;
+          elements.status.className = type;
+        }
+      } catch (error) {
+        console.error("Error setting status:", error);
       }
+    }
 
-      if (org) lines.push(`ORG:${org}`);
-
-      // ADR format: ADR;TYPE=WORK:pobox;extended;street;city;region;postalCode;country
-      if (work_extended || work_street || work_city || work_state || work_postal || work_country) {
-        lines.push(
-          `ADR;TYPE=WORK:;${work_extended};${work_street};${work_city};${work_state};${work_postal};${work_country}`
-        );
-      }
-
-      if (home_extended || home_street || home_city || home_state || home_postal || home_country) {
-        lines.push(
-          `ADR;TYPE=HOME:;${home_extended};${home_street};${home_city};${home_state};${home_postal};${home_country}`
-        );
-      }
-
-      if (mobile) lines.push(`TEL;TYPE=CELL:${mobile}`);
-      if (work_phone) lines.push(`TEL;TYPE=Work:${work_phone}`);
+    // Add protocol to URL if missing
+    function addProtocolIfMissing(url) {
+      if (!url) return url;
       
-      if (personal_email) lines.push(`EMAIL;TYPE=Home:${personal_email}`);
-      if (work_email) lines.push(`EMAIL;TYPE=Work:${work_email}`);
+      // Check if URL already has a protocol
+      if (/^[a-zA-Z][a-zA-Z0-9+.-]*:/.test(url)) {
+        return url;
+      }
+      
+      // Default to https://
+      return `https://${url}`;
+    }
 
-      if (website) lines.push(`URL:https://${website}`);
+    // Escape special characters for vCard format
+    function escapeVCardText(text) {
+      if (!text) return text;
+      return text
+        .replace(/\\/g, '\\\\')  // Escape backslashes first
+        .replace(/;/g, '\\;')      // Escape semicolons
+        .replace(/,/g, '\\,')      // Escape commas
+        .replace(/\n/g, '\\n')     // Escape newlines
+        .replace(/\r/g, '\\r');    // Escape carriage returns
+    }
+
+    /**
+     * Enhanced field validation with length limits
+     * @param {Object} field - Field configuration object
+     * @param {string} value - Field value to validate
+     * @returns {Object} Validation result with valid boolean and error message
+     */
+    function validateField(field, value) {
+      if (!value) return { valid: true };
+      
+      // Check length limit
+      if (value.length > CONFIG.MAX_FIELD_LENGTH) {
+        return { valid: false, error: `Text too long (max ${CONFIG.MAX_FIELD_LENGTH} chars)` };
+      }
+      
+      switch (field.type) {
+        case "email":
+          const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value) && value.length <= 254;
+          return { valid: emailValid, error: emailValid ? null : "Invalid email format" };
+        
+        case "tel":
+          const phoneValid = /^[\+]?[\d\s\-\(\)]{3,20}$/.test(value);
+          return { valid: phoneValid, error: phoneValid ? null : "Invalid phone number format" };
+        
+        case "url":
+          const urlValid = /^(https?:\/\/)?[a-zA-Z0-9][a-zA-Z0-9-._]*[a-zA-Z0-9]+(\.[a-zA-Z]{2,})?(\/.*)?$/.test(value);
+          return { valid: urlValid, error: urlValid ? null : "Invalid URL format" };
+          
+        default:
+          return { valid: true };
+      }
+    }
+
+    /**
+     * Form generation with error handling
+     */
+    function generateForm() {
+      try {
+        if (elements.maxSizeText) {
+          elements.maxSizeText.textContent = CONFIG.MAX_SIZE;
+        }
+
+        if (!elements.formContainer) {
+          console.error("Form container not found");
+          return;
+        }
+
+        elements.formContainer.innerHTML = "";
+        const container = elements.formContainer;  // Define container variable
+        const savedData = loadFormData();
+
+      Object.values(FIELD_CONFIG).forEach(group => {
+        const groupDiv = document.createElement("div");
+        groupDiv.className = "field-group";
+        
+        const title = document.createElement("h3");
+        title.textContent = group.title;
+        groupDiv.appendChild(title);
+
+        group.fields.forEach(field => {
+          const fieldDiv = document.createElement("div");
+          fieldDiv.className = "field";
+
+          const label = document.createElement("label");
+          label.textContent = field.label;
+          label.setAttribute("for", field.id);
+          
+          const input = document.createElement("input");
+          input.id = field.id;
+          input.type = field.type === "url" ? "text" : field.type;
+          input.maxLength = CONFIG.MAX_FIELD_LENGTH;
+          input.addEventListener("input", debouncedFieldChange);
+          input.addEventListener("blur", () => validateAndUpdateField(field, input));
+          
+          // Load saved data if available
+          if (savedData[field.id]) {
+            input.value = savedData[field.id];
+          }
+
+          fieldDiv.appendChild(label);
+          fieldDiv.appendChild(input);
+          groupDiv.appendChild(fieldDiv);
+        });
+
+        container.appendChild(groupDiv);
+      });
+      
+      } catch (error) {
+        console.error("Error generating form:", error);
+        setStatus("Error loading form. Please refresh the page.", "error");
+      }
+    }
+
+    /**
+     * Debounced field change handler for better performance
+     */
+    function debouncedFieldChange() {
+      clearTimeout(updateVCardTimeout);
+      updateVCardTimeout = setTimeout(() => {
+        updateVCardSize();
+        saveFormData();
+      }, CONFIG.UPDATE_DEBOUNCE_MS);
+    }
+
+    /**
+     * Form persistence functions
+     */
+    function saveFormData() {
+      try {
+        const data = getFormData();
+        localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(data));
+      } catch (error) {
+        console.warn("Could not save form data:", error);
+      }
+    }
+
+    function loadFormData() {
+      try {
+        const saved = localStorage.getItem(CONFIG.STORAGE_KEY);
+        return saved ? JSON.parse(saved) : {};
+      } catch (error) {
+        console.warn("Could not load saved form data:", error);
+        return {};
+      }
+    }
+
+    function clearFormData() {
+      try {
+        localStorage.removeItem(CONFIG.STORAGE_KEY);
+        Object.values(FIELD_CONFIG).forEach(group => {
+          group.fields.forEach(field => {
+            const input = document.getElementById(field.id);
+            if (input) input.value = "";
+          });
+        });
+        updateVCardSize();
+        setStatus("Form cleared", "info");
+      } catch (error) {
+        console.error("Error clearing form:", error);
+      }
+    }
+
+    // Validate and update individual field
+    function validateAndUpdateField(field, input) {
+      const fieldDiv = input.parentElement;
+      const existingError = fieldDiv.querySelector(".error-msg");
+      
+      if (existingError) {
+        existingError.remove();
+        fieldDiv.classList.remove("invalid");
+      }
+
+      const validation = validateField(field, input.value.trim());
+      if (!validation.valid) {
+        fieldDiv.classList.add("invalid");
+        const errorDiv = document.createElement("div");
+        errorDiv.className = "error-msg";
+        errorDiv.textContent = validation.error;
+        fieldDiv.appendChild(errorDiv);
+      }
+    }
+
+    // Get all form data
+    function getFormData() {
+      const data = {};
+      Object.values(FIELD_CONFIG).forEach(group => {
+        group.fields.forEach(field => {
+          const input = document.getElementById(field.id);
+          data[field.id] = input ? input.value.trim() : "";
+        });
+      });
+      return data;
+    }
+
+    // Build vCard from form data
+    function buildVCard() {
+      const data = getFormData();
+      const lines = ["BEGIN:VCARD", "VERSION:3.0"];
+
+      Object.values(FIELD_CONFIG).forEach(group => {
+        if (group.vcard) {
+          // Group-level vCard generation (like addresses)
+          const vcardLine = group.vcard(data);
+          if (vcardLine) lines.push(vcardLine);
+        } else {
+          // Individual field vCard generation
+          group.fields.forEach(field => {
+            if (field.vcard) {
+              const vcardLine = field.vcard(data);
+              if (vcardLine) lines.push(vcardLine);
+            }
+          });
+        }
+      });
 
       lines.push("END:VCARD");
-
       return lines.join("\r\n");
     }
 
-    // -------------------------------
-    // NFC Permission Handling
-    // -------------------------------
+    // Form persistence functions
+    function saveFormData() {
+      try {
+        const data = getFormData();
+        localStorage.setItem(CONFIG.STORAGE_KEY, JSON.stringify(data));
+      } catch (error) {
+        console.warn("Could not save form data:", error);
+      }
+    }
+
+    function loadFormData() {
+      try {
+        const saved = localStorage.getItem(CONFIG.STORAGE_KEY);
+        return saved ? JSON.parse(saved) : {};
+      } catch (error) {
+        console.warn("Could not load saved form data:", error);
+        return {};
+      }
+    }
+
+    function clearFormData() {
+      try {
+        localStorage.removeItem(CONFIG.STORAGE_KEY);
+        Object.values(FIELD_CONFIG).forEach(group => {
+          group.fields.forEach(field => {
+            const input = document.getElementById(field.id);
+            if (input) input.value = "";
+          });
+        });
+        updateVCardSize();
+        setStatus("Form cleared", "info");
+      } catch (error) {
+        console.error("Error clearing form:", error);
+      }
+    }
+
+    function previewVCard() {
+      try {
+        const vcard = buildVCard();
+        const size = vcard.length + CONFIG.NDEF_OVERHEAD;
+        setStatus(`vCard Preview (${size} bytes):\n\n${vcard}`, "info");
+      } catch (error) {
+        setStatus("Error generating vCard preview", "error");
+      }
+    }
+
+    // Debounced field change for performance
+    function debouncedFieldChange() {
+      clearTimeout(updateVCardTimeout);
+      updateVCardTimeout = setTimeout(() => {
+        updateVCardSize();
+        saveFormData();
+      }, CONFIG.UPDATE_DEBOUNCE_MS);
+    }
+
+    /**
+     * Update size indicator with enhanced error handling
+     */
+    function updateVCardSize() {
+      try {
+        const vcard = buildVCard();
+        const totalSize = vcard.length + CONFIG.NDEF_OVERHEAD;
+        const percentage = Math.min((totalSize / CONFIG.MAX_SIZE) * 100, 100);
+        
+        if (elements.sizeText) {
+          elements.sizeText.textContent = totalSize.toString();
+        }
+        
+        if (elements.sizeFill) {
+          elements.sizeFill.style.width = `${percentage}%`;
+        }
+        
+        // Enhanced color coding and status
+        const isOverLimit = totalSize > CONFIG.MAX_SIZE;
+        const isNearLimit = totalSize > CONFIG.MAX_SIZE * 0.9;
+        
+        if (elements.writeBtn) {
+          elements.writeBtn.disabled = isOverLimit;
+        }
+        
+        if (elements.sizeFill) {
+          if (isOverLimit) {
+            elements.sizeFill.style.backgroundColor = "#dc3545";
+            setStatus(`vCard too large: ${totalSize - CONFIG.MAX_SIZE} bytes over limit`, "error");
+          } else if (isNearLimit) {
+            elements.sizeFill.style.backgroundColor = "#ffc107";
+            setStatus(`vCard near size limit: ${CONFIG.MAX_SIZE - totalSize} bytes remaining`, "warning");
+          } else {
+            elements.sizeFill.style.backgroundColor = "#28a745";
+            setStatus("Ready to write to NFC tag", "info");
+          }
+        }
+
+        return totalSize;
+      } catch (error) {
+        console.error("Error updating vCard size:", error);
+        setStatus("Error calculating vCard size", "error");
+        return 0;
+      }
+    }
+
+    // NFC Permission handling
     async function ensureNfcPermission() {
       if (!("permissions" in navigator)) {
-        return true; // Older browsers: just try writing
+        return true;
       }
 
       try {
@@ -201,80 +508,157 @@
         }
 
         if (status.state === "denied") {
-          setStatus("NFC permission denied in browser settings.", true);
+          setStatus("NFC permission denied in browser settings.", "error");
           return false;
         }
 
-        // state === "prompt"
         try {
           const reader = new NDEFReader();
-          await reader.scan(); // triggers permission dialog
+          await reader.scan();
           reader.onreading = () => {};
           return true;
         } catch (err) {
-          setStatus("NFC permission request was cancelled or blocked.", true);
+          setStatus("NFC permission request was cancelled or blocked.", "error");
           return false;
         }
       } catch (err) {
-        return true; // Permissions API not supported
+        return true;
       }
     }
-  
-    function textToUint8Array(text) {
-      return new TextEncoder().encode(text);
-    }
 
-    // -------------------------------
-    // Write vCard to NFC Tag
-    // -------------------------------
-    async function writeVCardToNfc() {
-      if (!("NDEFReader" in window)) {  // should actually test for Writer, but that's not exposed yet in Chrome147/Android
-        setStatus("Web NFC is not supported on this device.", true);
-        return;
-      }
-
-      // Request permission if needed
-      const ok = await ensureNfcPermission();
-      if (!ok) return;
-
-      const vcard = buildVCard();
-      const vcardBytes = textToUint8Array(vcard);
-      setStatus("Tap and hold an NFC tag near your phone…");
-
+    /**
+     * Preview vCard content
+     */
+    function previewVCard() {
       try {
-        const reader = new NDEFReader();
-        await reader.write({
-          records: [
-            {
-              recordType: "mime",
-              mediaType: "text/vcard",
-              data: vcardBytes
+        const vcard = buildVCard();
+        const size = vcard.length + CONFIG.NDEF_OVERHEAD;
+        setStatus(`vCard Preview (${size} bytes):\n\n${vcard}`, "info");
+      } catch (error) {
+        setStatus("Error generating vCard preview", "error");
+      }
+    }
+
+    /**
+     * Write vCard to NFC with enhanced error handling
+     */
+    async function writeVCardToNfc() {
+      try {
+        if (!("NDEFReader" in window)) {
+          setStatus("Web NFC is not supported on this device/browser.", "error");
+          return;
+        }
+
+        // Validate form before writing
+        let hasErrors = false;
+        Object.values(FIELD_CONFIG).forEach(group => {
+          group.fields.forEach(field => {
+            const input = document.getElementById(field.id);
+            if (input) {
+              const validation = validateField(field, input.value.trim());
+              if (!validation.valid) {
+                hasErrors = true;
+              }
             }
-          ]
+          });
         });
 
-        setStatus("vCard written successfully!\n\n" + vcard);
+        if (hasErrors) {
+          setStatus("Please fix validation errors before writing to NFC", "error");
+          return;
+        }
+
+        const ok = await ensureNfcPermission();
+        if (!ok) return;
+
+        const vcard = buildVCard();
+        const vcardBytes = new TextEncoder().encode(vcard);
+        
+        if (elements.writeBtn) {
+          elements.writeBtn.disabled = true;
+          elements.writeBtn.textContent = "Writing...";
+        }
+        
+        setStatus("Tap and hold an NFC tag near your device…", "info");
+
+        const reader = new NDEFReader();
+        await reader.write({
+          records: [{
+            recordType: "mime",
+            mediaType: "text/vcard",
+            data: vcardBytes
+          }]
+        });
+
+        setStatus("vCard written successfully to NFC tag!", "success");
       } catch (err) {
-        setStatus("Error writing NFC tag: " + err.message, true);
+        setStatus(`NFC write failed: ${err.message}`, "error");
+      } finally {
+        if (elements.writeBtn) {
+          elements.writeBtn.disabled = false;
+          elements.writeBtn.textContent = "Write vCard to NFC Tag";
+        }
       }
     }
 
-    function checkLength() {
-      // track size of the vCard which will be written, NTAG215 allows up to 490 bytes
-      const max_size = 490
-      const vcard = buildVCard();
-      const l = vcard.length + 16 // 16 bytes overhead for the MIME type etc
-      setStatus(`Bytes: ${l}`,l > max_size)
-
-      document.getElementById("writeBtn").disabled = (l > max_size)
+    /**
+     * Initialize application with error handling
+     */
+    function initializeApp() {
+      try {
+        // Re-cache DOM elements to ensure they're available
+        elements.status = document.getElementById("status");
+        elements.sizeText = document.getElementById("size-text");
+        elements.sizeFill = document.getElementById("size-fill");
+        elements.maxSizeText = document.getElementById("maxsize-text");
+        elements.writeBtn = document.getElementById("writeBtn");
+        elements.clearBtn = document.getElementById("clearBtn");
+        elements.previewBtn = document.getElementById("previewBtn");
+        elements.formContainer = document.getElementById("form-container");
+        
+        generateForm();
+        updateVCardSize();
+        
+        // Event listeners with safety checks
+        if (elements.writeBtn) {
+          elements.writeBtn.addEventListener("click", writeVCardToNfc);
+        }
+        
+        if (elements.clearBtn) {
+          elements.clearBtn.addEventListener("click", clearFormData);
+        }
+        
+        if (elements.previewBtn) {
+          elements.previewBtn.addEventListener("click", previewVCard);
+        }
+        
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+          if (e.ctrlKey || e.metaKey) {
+            if (e.key === 's') {
+              e.preventDefault();
+              saveFormData();
+              setStatus("Form data saved", "info");
+            } else if (e.key === 'r') {
+              e.preventDefault();
+              clearFormData();
+            }
+          }
+        });
+        
+        setStatus("Application loaded successfully", "info");
+      } catch (error) {
+        console.error("Initialization error:", error);
+        setStatus("Error loading application. Please refresh the page.", "error");
+      }
     }
 
-    document.getElementById("writeBtn").addEventListener("click", writeVCardToNfc);
-
-    document.addEventListener("input", () => {
-      checkLength()
-    });
-    checkLength();
+    // Initialize when DOM is ready
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initializeApp);
+    } else {
+      initializeApp();
+    }
   </script>
 </body>
 </html>
