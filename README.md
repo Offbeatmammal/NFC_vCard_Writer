@@ -4,11 +4,13 @@ This is a fairly simple project (HTML, Javascript) to allow a user with Chrome r
 
 It was annoying how bad some of the available apps were that offered to do this - either full of ads, partial/broken/no vCard implementation, or expensive - so I ended up spending a bit of time researching this (I needed to be able to read/write NFC enabled ID cards for a non-profit to track volunteers, so was already heading down the rabbit-hole!).
 
-Current implementation supports vCard 3.0, and work addresses (though could be easily extended to support a home address option as well), and assumes it's the only record on the card (it overwrites whatever was on the card before). It only writes vCard fields that are supplied to minimise the memory usage on the tag.
+Current implementation supports vCard 3.0, and assumes it's the only record on the card (it overwrites whatever was on the card before). It only writes vCard fields that are supplied to minimise the memory usage on the tag.
 
-It checks input to make sure the vCard will fit onto an NTAG215 format card (if using an NTAG216 the `max_size` constant should be adjusted accordingly) - it would be nice to add an option to read the card the user intends to use and set the `max_size` based on memory (could also check if it's writable or locked at the same time).
+It checks inputs to make sure the vCard will fit onto an NTAG215 format card (if using an NTAG216 the `max_size` constant should be adjusted accordingly) - it would be nice to add an option to read the card the user intends to use and set the `max_size` based on memory (could also check if it's writable or locked at the same time).
 
-Apart from the length check, there is no validation (might be nice to validate emails are correct format or the URL can be accessed), either keeping it within the HTML/JavaScript or doing some server side validation.
+Additional validation is carried out for emails, phone numbers etc, and if a URL is entered but has no prefix then https:// is added automatically.
+
+Form data is persisted to local storage to help with little edits.
 
 If you want to try it out, there's a live version hosted [here](https://obm.one/nfc_write).
 
