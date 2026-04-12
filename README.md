@@ -16,7 +16,7 @@ If you want to try it out, there's a live version hosted [here](https://obm.one/
 
 **Requests:** 
 ---
-- if someone with an iPhone can validate if these vCards are correctly read that would be great (annoyingly Apple didn't add NFC capabilities to the iPad Pro I have).
+- if someone with an iPhone can validate if these vCards are correctly read that would be great (annoyingly Apple didn't add NFC capabilities to the iPad, or provide the same level developer access to NFC as Android has).
 - would be good to have a list of phones this has been tested with to know what it can write from. I've tested successfully on a Pixel Pro 9 and Pixel 3.
 
 *Oh, and if you use this in a commercial project or just feel generous - BTC gratefully accepted: bc1qeurlc5eqmv7997ce9uep7dxsk4w2rya8v88gzyv24r297qs2wrmqfp8kfq*
