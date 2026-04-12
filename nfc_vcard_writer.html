@@ -35,6 +35,8 @@
 <body>
   <h1>NFC vCard Writer</h1>
 
+  <div>Enter details below, and then press the [Write] button. Note than NTAG215 only has 490 bytes available so the content, including vCard structure, needs to fit into that.</div>
+
   <h3>Full Name</h3>
 
   <label>First Name</label>
@@ -48,7 +50,7 @@
 
   <h3>Work Address</h3>
   
-  <label>Street</label>
+  <label>Number/Apartment</label>
   <input id="work_addrExtended" value="" />
   
   <label>Street</label>
@@ -65,6 +67,28 @@
 
   <label>Country</label>
   <input id="work_addrCountry" value="" />
+
+  <h3>Home Address</h3>
+  
+  <label>Number/Apartment</label>
+  <input id="home_addrExtended" value="" />
+  
+  <label>Street</label>
+  <input id="home_addrStreet" value="" />
+
+  <label>City</label>
+  <input id="home_addrCity" value="" /> 
+
+  <label>State / Region</label>
+  <input id="home_addrState" value="" />
+
+  <label>Postal Code</label>
+  <input id="home_addrPostal" value="" />
+
+  <label>Country</label>
+  <input id="home_addrCountry" value="" />
+
+  <h3>Communications</h3>
 
   <label>Mobile Phone</label>
   <input id="mobile" value="" />
@@ -103,12 +127,19 @@
       const lastname = document.getElementById("lastname").value.trim();
       const org = document.getElementById("org").value.trim();
 
-      const extended = document.getElementById("work_addrExtended").value.trim();
-      const street = document.getElementById("work_addrStreet").value.trim();
-      const city = document.getElementById("work_addrCity").value.trim();
-      const state = document.getElementById("work_addrState").value.trim();
-      const postal = document.getElementById("work_addrPostal").value.trim();
-      const country = document.getElementById("work_addrCountry").value.trim();
+      const work_extended = document.getElementById("work_addrExtended").value.trim();
+      const work_street = document.getElementById("work_addrStreet").value.trim();
+      const work_city = document.getElementById("work_addrCity").value.trim();
+      const work_state = document.getElementById("work_addrState").value.trim();
+      const work_postal = document.getElementById("work_addrPostal").value.trim();
+      const work_country = document.getElementById("work_addrCountry").value.trim();
+
+      const home_extended = document.getElementById("home_addrExtended").value.trim();
+      const home_street = document.getElementById("home_addrStreet").value.trim();
+      const home_city = document.getElementById("home_addrCity").value.trim();
+      const home_state = document.getElementById("home_addrState").value.trim();
+      const home_postal = document.getElementById("home_addrPostal").value.trim();
+      const home_country = document.getElementById("home_addrCountry").value.trim();
 
       const mobile = document.getElementById("mobile").value.trim();
       const work_phone = document.getElementById("work_phone").value.trim();
@@ -129,9 +160,15 @@
       if (org) lines.push(`ORG:${org}`);
 
       // ADR format: ADR;TYPE=WORK:pobox;extended;street;city;region;postalCode;country
-      if (extended || street || city || state || postal || country) {
+      if (work_extended || work_street || work_city || work_state || work_postal || work_country) {
         lines.push(
-          `ADR;TYPE=WORK:;${extended};${street};${city};${state};${postal};${country}`
+          `ADR;TYPE=WORK:;${work_extended};${work_street};${work_city};${work_state};${work_postal};${work_country}`
+        );
+      }
+
+      if (home_extended || home_street || home_city || home_state || home_postal || home_country) {
+        lines.push(
+          `ADR;TYPE=HOME:;${home_extended};${home_street};${home_city};${home_state};${home_postal};${home_country}`
         );
       }
 
