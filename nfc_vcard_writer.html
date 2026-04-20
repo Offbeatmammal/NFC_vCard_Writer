@@ -42,7 +42,9 @@
 <body>
   <h1>NFC vCard Writer</h1>
 
-  <div class="intro">Enter your contact details below and press [Write] to save to an NFC tag. NTAG215 tags have 490 bytes available - the size indicator shows current usage.</div>
+  <div class="intro">Enter your contact details below and press [Write] to save to an NFC tag. NTAG215 tags have 490 bytes available - the size indicator shows current usage.
+    <br>If you find any issues, need additional fields, or want to contribute improvements then please visit <a href="https://github.com/Offbeatmammal/NFC_vCard_Writer">the project site</a>.
+  </div>
 
   <div id="form-container">
     <!-- Form will be dynamically generated here -->
@@ -62,6 +64,8 @@
   </div>
 
   <div id="status"></div>
+
+  <div>If this is useful, BTC gratefully accepted: bc1qeurlc5eqmv7997ce9uep7dxsk4w2rya8v88gzyv24r297qs2wrmqfp8kfq</div>
 
   <script>
     // Configuration constants
@@ -94,6 +98,15 @@
         fields: [
           { id: "firstName", label: "First Name", type: "text", vcard: data => data.firstName && `FN:${escapeVCardText(data.firstName)} ${escapeVCardText(data.lastName || '')}`.trim() },
           { id: "lastName", label: "Last Name", type: "text", vcard: data => data.lastName && `N:${escapeVCardText(data.lastName)};${escapeVCardText(data.firstName || '')};;;` },
+          { id: "photo", label: "Photograph", type: "url", vcard: data => data.photo && `PHOTO;VALUE=uri:${escapeVCardText(data.photo)}`},
+          { id: "note", label: "Note", type: "text", vcard: data => data.note && `NOTE:${escapeVCardText(data.note)}`}
+        ]
+      },
+      organization: {
+        title: "Organization",
+        fields: [
+          { id: "title", label: "Title", type: "text", vcard: data => data.title && `TITLE:${escapeVCardText(data.title)}` },
+          { id: "role", label: "Role", type: "text", vcard: data => data.role && `ROLE:${escapeVCardText(data.role)}` },
           { id: "organization", label: "Organization", type: "text", vcard: data => data.organization && `ORG:${escapeVCardText(data.organization)}` }
         ]
       },
@@ -209,6 +222,12 @@
         return { valid: false, error: `Text too long (max ${CONFIG.MAX_FIELD_LENGTH} chars)` };
       }
       
+      // Special validation for photo field - must be https:// URL
+      if (field.id === "photo") {
+        const photoValid = /^https:\/\/[a-zA-Z0-9][a-zA-Z0-9-._]*[a-zA-Z0-9]+(\.[a-zA-Z]{2,})+(\/.*)?(\?.*)?$/.test(value);
+        return { valid: photoValid, error: photoValid ? null : "Photo must be a valid HTTPS URL (starting with https://)" };
+      }
+      
       switch (field.type) {
         case "email":
           const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(value) && value.length <= 254;
@@ -219,7 +238,7 @@
           return { valid: phoneValid, error: phoneValid ? null : "Invalid phone number format" };
         
         case "url":
-          const urlValid = /^(https?:\/\/)?[a-zA-Z0-9][a-zA-Z0-9-._]*[a-zA-Z0-9]+(\.[a-zA-Z]{2,})?(\/.*)?$/.test(value);
+          const urlValid = /^(https?:\/\/)?[a-zA-Z0-9][a-zA-Z0-9-._]*[a-zA-Z0-9]+(\.[a-zA-Z]{2,})?(\/.*)?(\?.*)?$/.test(value);
           return { valid: urlValid, error: urlValid ? null : "Invalid URL format" };
           
         default:
