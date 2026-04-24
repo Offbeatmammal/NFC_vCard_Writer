@@ -1,6 +1,6 @@
 # NFC vCard Writer
 
-This is a fairly simple project (HTML, Javascript) to allow a user with Chrome running on a supported Android device to write a vCard to an NFC tag (see [NDEFWriter](https://caniuse.com/?search=NDEFWriter) for latest device/browser version support).
+This is a fairly simple project (HTML, Javascript) to allow a user with Chrome running on a supported Android device to write a vCard to an NFC tag (see [NDEFWriter](https://caniuse.com/?search=NDEFWriter) for latest device/browser version support) that can then be read on Android (natively) or iOS (requires 3rd party apps).
 
 It was annoying how bad some of the available apps were that offered to do this - either full of ads, partial/broken/no vCard implementation, or expensive - so I ended up spending a bit of time researching this (I needed to be able to read/write NFC enabled ID cards for a non-profit to track volunteers, so was already heading down the rabbit-hole!).
 
@@ -14,11 +14,11 @@ Form data is persisted to local storage to help with little edits.
 
 If you want to try it out, there's a live version hosted [here](https://obm.one/nfc_write).
 
-It seems that neither iOS nor Android like the PHOTO field as a URL and simply ignore it, also Role seems to be ignored, but added for completeness.
+It seems that Android dislike the PHOTO field as a URL and simply ignores it (trust issues), also Role seems to be ignored, but added for completeness.
 
 **Requests:** 
 ---
-- if someone with an iPhone can validate if these vCards are correctly read that would be great (annoyingly Apple didn't add NFC capabilities to the iPad, or provide the same level developer access to NFC as Android has).
+- annoyingly Apple doesn't yet support vCard as an NFC payload (yet?) although they do support URL and some other types. Would be helpful to know good 3rd party apps that can read and manage vCard tags.
 - would be good to have a list of phones this has been tested with to know what it can write from. I've tested successfully on a Pixel Pro 9 and Pixel 3.
 
 *Oh, and if you use this in a commercial project or just feel generous - BTC gratefully accepted: bc1qeurlc5eqmv7997ce9uep7dxsk4w2rya8v88gzyv24r297qs2wrmqfp8kfq*
